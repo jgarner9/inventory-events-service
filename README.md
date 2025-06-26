@@ -2,7 +2,7 @@
 
 **Project Based Learning – Part 1**
 
-> **Prompt to ChatGPT**
+**Prompt to ChatGPT**
 > _"Pretend you are my boss at a software company (fill in the blanks on any details there yourself). Give me the software requirements for a microservice you would like me to build for an existing architecture (again, make up any necessary details). I will use this to do more project-based learning."_
 
 ---
@@ -74,4 +74,57 @@ CREATE TABLE inventory_events (
     event_type TEXT, -- 'LOW_STOCK', 'OUT_OF_STOCK', 'BACK_IN_STOCK'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+```
 
+---
+
+### ⚙️ Threshold Logic
+
+Apply the following rules:
+
+**LOW_STOCK**: Quantity drops below 10 but above 0
+**OUT_OF_STOCK**: Quantity reaches 0
+**BACK_IN_STOCK**: Quantity increases from 0 to any positive number
+> 🔁 Only trigger each event once per state transition — do not emit LOW_STOCK repeatedly if quantity stays below 10.
+
+---
+
+### 📡 Internal API
+
+**Endpoint:**
+`GET /events?product_id=<uuid>&limit=20`
+**Returns:**
+JSON list of recent inventory_events for a given product ID
+Authentication:
+Simulated internal token-based auth via header:
+Authorization: Bearer internal-token
+
+---
+
+### 🧪 Testing & Local Setup
+
+Use **Docker** to run local instances of RabbitMQ and PostgreSQL
+Provide a `docker-compose.yml` to spin up dependencies
+Write integration tests that:
+Simulate inventory updates
+Validate correct events are published and stored
+
+---
+
+### 📦 Deliverables
+
+✅ `inventory-events-service` source code (written in Go)
+✅ `Dockerfile` + `docker-compose.yml`
+✅ `README.md` with setup instructions
+✅ Example `curl` or `grpcurl` commands
+✅ Integration tests
+
+---
+
+## 🤝 Notes
+
+Let me know if you need assistance with:
+
+Setting up RabbitMQ queues and topics
+Ensuring event idempotency
+Pair programming any part of the business logic
