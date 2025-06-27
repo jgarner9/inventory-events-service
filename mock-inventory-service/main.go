@@ -62,10 +62,10 @@ type NoArgsError struct{}
 type OneArgError struct{}
 
 func (b *NoArgsError) Error() string {
-	return "No arguments provided (expected 'go run main.go productID quantity')"
+	return "No arguments provided (expected args 'productID quantity')"
 }
 func (b *OneArgError) Error() string {
-	return "Only one argument provided (expected 'go run main.go productID quantity')"
+	return "Only one argument provided (expected args 'productID quantity')"
 }
 
 func bodyFrom(args []string) (body []byte, err error) {
