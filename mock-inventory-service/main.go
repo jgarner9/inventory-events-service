@@ -79,7 +79,7 @@ func bodyFrom(args []string) (body []byte, err error) {
 	quantity := os.Args[2]
 	timestamp := time.Now()
 
-	jsonString := fmt.Sprintf(`{"product_id":"%s","quantity":"%s","timestamp":"%s"}`, productID, quantity, timestamp)
+	jsonString := fmt.Sprintf(`{"product_id":"%s","quantity":%s,"timestamp":"%s"}`, productID, quantity, timestamp)
 	jsonBody, err := json.Marshal(jsonString)
 
 	return jsonBody, nil

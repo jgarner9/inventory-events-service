@@ -1,18 +1,25 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// type EventLog type {
-// 	ProductID int `json:"product_id"`
-// 	PreviousQuantity int `json:"previous_quantity"`
-// 	NewQuantity int `json:"new_quantity`
-// 	EventType string `json:event_type`
-// }
+type InventoryEvent struct {
+	ProductID string `json:"product_id"`
+	Quantity  int    `json:"quantity"`
+	Timestamp string `json:"timestamp"`
+}
+
+type EventLog struct {
+	ProductID        string `json:"product_id"`
+	PreviousQuantity int    `json:"previous_quantity"`
+	NewQuantity      int    `json:"new_quantity"`
+	EventType        string `json:"event_type"`
+}
 
 func failOnError(err error, msg string) {
 	if err != nil {
@@ -70,14 +77,61 @@ func main() {
 	)
 
 	fmt.Println("Connection started, waiting to receive (CTRL+C to exit)")
+	var lastKnownQuantities = make(map[string]int)
+	lastKnownQuantities["1"] = 11
+	lastKnownQuantities["2"] = 1
+	lastKnownQuantities["3"] = 0
 	for msg := range msgs {
-		// eventType := EvaluateThresholds(msg)
+		fmt.Println("Message received")
+		inventoryEventBody := GetBody(msg.Body)
+		failOnError(err, "Unable to unmarshal JSON")
+
+		productID := inventoryEventBody.ProductID
+		previousQuantity := lastKnownQuantities[productID]
+		currentQuantity := inventoryEventBody.Quantity
+		eventType := EvaluateThresholds(currentQuantity, previousQuantity)
+
+		if eventType != "" {
+			err = CreateLog(EventLog{
+				ProductID:        productID,
+				PreviousQuantity: previousQuantity,
+				NewQuantity:      currentQuantity,
+				EventType:        eventType,
+			})
+			failOnError(err, "Failed to create log")
+			fmt.Println("Log created")
+		}
+
 	}
 
 	// loop declaration
 	<-make(chan struct{})
 }
 
-// func EvaluateThresholds(msg []byte) string {
-//
-// }
+func EvaluateThresholds(currentQuantity, previousQuantity int) string {
+	if currentQuantity <= 0 && previousQuantity > 0 {
+		return "OUT_OF_STOCK"
+	} else if currentQuantity < 10 && previousQuantity >= 10 {
+		return "LOW_STOCK"
+	} else if currentQuantity > 0 && previousQuantity <= 0 {
+		return "BACK_IN_STOCK"
+	}
+
+	return ""
+}
+
+func GetBody(body []byte) InventoryEvent {
+	var bodyString string
+	err := json.Unmarshal(body, &bodyString)
+	failOnError(err, "Failed to unmarshal body to string")
+
+	var jsonBody InventoryEvent
+	err = json.Unmarshal([]byte(bodyString), &jsonBody)
+	failOnError(err, "Failed to unmarshal body to InventoryEvent type")
+
+	return jsonBody
+}
+
+func CreateLog(log EventLog) error {
+	return nil
+}
