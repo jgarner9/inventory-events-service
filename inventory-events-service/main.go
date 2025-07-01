@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"context"
+	"github.com/jackc/pgx/v5"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -78,7 +80,7 @@ func main() {
 
 	fmt.Println("Connection started, waiting to receive (CTRL+C to exit)")
 	var lastKnownQuantities = make(map[string]int)
-	lastKnownQuantities["1"] = 11
+	lastKnownQuantities["f47ac10b-58cc-4372-a567-0e02b2c3d479"] = 11
 	lastKnownQuantities["2"] = 1
 	lastKnownQuantities["3"] = 0
 	for msg := range msgs {
@@ -92,13 +94,12 @@ func main() {
 		eventType := EvaluateThresholds(currentQuantity, previousQuantity)
 
 		if eventType != "" {
-			err = CreateLog(EventLog{
+			CreateLog(EventLog{
 				ProductID:        productID,
 				PreviousQuantity: previousQuantity,
 				NewQuantity:      currentQuantity,
 				EventType:        eventType,
 			})
-			failOnError(err, "Failed to create log")
 			fmt.Println("Log created")
 		}
 
@@ -132,6 +133,20 @@ func GetBody(body []byte) InventoryEvent {
 	return jsonBody
 }
 
-func CreateLog(log EventLog) error {
-	return nil
+func CreateLog(log EventLog) {
+	ctx := context.Background()
+	//TODO: Change this to take the connection string from os.Getenv()
+	conn, err := pgx.Connect(ctx, "postgresql://invent:PurpleOctopi*22@localhost:5432/inventory_service?sslmode=disable")
+	failOnError(err, "Failed to connect to DB")
+	defer conn.Close(ctx)
+
+	query := fmt.Sprintf("INSERT INTO inventory_events (product_id, previous_quantity, new_quantity, event_type) VALUES ($1, $2, $3, $4);")
+
+	status, err := conn.Exec(ctx, query, log.ProductID, log.PreviousQuantity, log.NewQuantity, log.EventType)
+	failOnError(err, "Failed to add log to table")
+	if status.RowsAffected() == 1 {
+		fmt.Println("Event logged")
+	} else {
+		fmt.Printf("Something went wrong: %s\n", status.String())
+	}
 }
