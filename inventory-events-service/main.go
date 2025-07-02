@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"context"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -78,13 +81,18 @@ func main() {
 		nil,
 	)
 
-	fmt.Println("Connection started, waiting to receive (CTRL+C to exit)")
 	var lastKnownQuantities = make(map[string]int)
 	lastKnownQuantities["f47ac10b-58cc-4372-a567-0e02b2c3d479"] = 11
 	lastKnownQuantities["2"] = 1
 	lastKnownQuantities["3"] = 0
+
+	// start internal API
+	go func() {
+		router := SetupAPIRouter()
+		router.Run(":5665")
+	}()
+
 	for msg := range msgs {
-		fmt.Println("Message received")
 		inventoryEventBody := GetBody(msg.Body)
 		failOnError(err, "Unable to unmarshal JSON")
 
@@ -100,13 +108,9 @@ func main() {
 				NewQuantity:      currentQuantity,
 				EventType:        eventType,
 			})
-			fmt.Println("Log created")
 		}
 
 	}
-
-	// loop declaration
-	<-make(chan struct{})
 }
 
 func EvaluateThresholds(currentQuantity, previousQuantity int) string {
@@ -140,7 +144,7 @@ func CreateLog(log EventLog) {
 	failOnError(err, "Failed to connect to DB")
 	defer conn.Close(ctx)
 
-	query := fmt.Sprintf("INSERT INTO inventory_events (product_id, previous_quantity, new_quantity, event_type) VALUES ($1, $2, $3, $4);")
+	query := "INSERT INTO inventory_events (product_id, previous_quantity, new_quantity, event_type) VALUES ($1, $2, $3, $4);"
 
 	status, err := conn.Exec(ctx, query, log.ProductID, log.PreviousQuantity, log.NewQuantity, log.EventType)
 	failOnError(err, "Failed to add log to table")
@@ -149,4 +153,45 @@ func CreateLog(log EventLog) {
 	} else {
 		fmt.Printf("Something went wrong: %s\n", status.String())
 	}
+}
+
+func SetupAPIRouter() *gin.Engine {
+	router := gin.Default()
+
+	router.GET("/events", func(ctx *gin.Context) {
+		productID := ctx.Query("product_id")
+		limit := ctx.DefaultQuery("limit", "20")
+
+		logs := GetLogs(productID, limit)
+
+		if logs != "" {
+			ctx.JSON(http.StatusOK, logs)
+		} else {
+			ctx.String(http.StatusNotFound, "No logs found for product ID")
+		}
+	})
+
+	return router
+}
+
+func GetLogs(id, limit string) string {
+	ctx := context.Background()
+	//TODO: Change this to take the connection string from os.Getenv()
+	conn, err := pgx.Connect(ctx, "postgresql://invent:PurpleOctopi*22@localhost:5432/inventory_service?sslmode=disable")
+	failOnError(err, "Failed to connect to DB")
+	defer conn.Close(ctx)
+
+	var jsonOutput string
+	err = conn.QueryRow(ctx, `
+    		SELECT COALESCE(json_agg(t), '[]'::json)
+    		FROM (
+        		SELECT *
+        		FROM inventory_events
+        		WHERE product_id = $1
+        		LIMIT $2
+    		) t
+	`, id, limit).Scan(&jsonOutput)
+	failOnError(err, "Failed to query DB")
+
+	return jsonOutput
 }
