@@ -1,6 +1,6 @@
 # 📦 Inventory Notifications Microservice
 
-**Project Based Learning – Part 1**
+## Project Based Learning
 
 **Prompt to ChatGPT**
 > _"Pretend you are my boss at a software company (fill in the blanks on any details there yourself). Give me the software requirements for a microservice you would like me to build for an existing architecture (again, make up any necessary details). I will use this to do more project-based learning."_
