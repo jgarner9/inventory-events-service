@@ -7,17 +7,20 @@
 
 ---
 
-## What the AI returned
 ### 💼 Boss to Developer Brief
-   **To:** Jason Garner
-   **From:** Dana Hartley, VP of Engineering, NovaLoop Technologies
-   **Subject:** Software Requirements – Inventory Notifications Microservice
-   **Date:** June 19, 2025
+**To:** Jason Garner  
+**From:** Dana Hartley, VP of Engineering, NovaLoop Technologies  
+**Subject:** Software Requirements – Inventory Notifications Microservice  
+**Date:** June 19, 2025  
+
+---
 
 ### 📦 Project Background
 NovaLoop Technologies is building out a modular, cloud-native e-commerce platform for mid-sized retail clients. Our backend is based on a microservice architecture running in a Kubernetes cluster, written primarily in Go and Node.js, with RabbitMQ for messaging, PostgreSQL for persistent storage, and Redis for caching. Services communicate over gRPC and REST, depending on use case.
 
 Currently, our system lacks an efficient way to notify external systems and internal services when an inventory level crosses critical thresholds (e.g., low stock, out-of-stock, back in stock). We need a dedicated microservice to manage inventory threshold events and notify downstream systems such as the fulfillment engine, email dispatcher, and admin dashboard.
+
+---
 
 ### 🧩 Your Assignment: `inventory-events-service`
 
@@ -30,15 +33,17 @@ Build a new microservice called `inventory-events-service`. This service is resp
 
 ### 🛠️ Technical Requirements
 
+---
+
 ### Language & Framework
-   **Primary language:** Go (Golang)
-   **Frameworks:** Use `Gin` or `chi` for REST (if applicable), or `grpc-go` for gRPC
-   **Database ORM:** `gorm` or raw SQL with `pgx`
+   **Primary language:** Go (Golang)  
+   **Frameworks:** Use `Gin` or `chi` for REST (if applicable), or `grpc-go` for gRPC  
+   **Database ORM:** `gorm` or raw SQL with `pgx`  
 
 #### Messaging
-   **Broker:** RabbitMQ (via AMQP 0.9.1)
-   **Input queue:** `inventory.updates`
-   **Output topic:** `inventory.events`
+   **Broker:** RabbitMQ (via AMQP 0.9.1)  
+   **Input queue:** `inventory.updates`  
+   **Output topic:** `inventory.events`  
 
 #### Database
    **Type:** PostgreSQL (via internal `postgres-service`)
@@ -69,10 +74,14 @@ You will apply the following business rules:
    Returns: Most recent `inventory_events` for a given product ID in JSON format
    Auth: Internal token-based authentication (we'll simulate this with a simple header check: `Authorization: Bearer internal-token`)
 
+---
+
 ### 🧪 Testing & Local Setup
    Use Docker for local RabbitMQ and PostgreSQL instances
    Provide a docker-compose.yml with all dependencies
    Write a few integration tests to simulate inventory changes and assert the correct events fire
+
+---
 
 ### 📦 Deliverables
    [x] inventory-events-service source code in Go
