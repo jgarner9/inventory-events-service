@@ -10,10 +10,10 @@
 ## What the AI returned
 ### 💼 Boss to Developer Brief
 
-**To:** Jason Garner
-**From:** Dana Hartley, VP of Engineering, NovaLoop Technologies
-**Subject:** Software Requirements – Inventory Notifications Microservice
-**Date:** June 19, 2025
+    **To:** Jason Garner
+    **From:** Dana Hartley, VP of Engineering, NovaLoop Technologies
+    **Subject:** Software Requirements – Inventory Notifications Microservice
+    **Date:** June 19, 2025
 
 ### 📦 Project Background
 NovaLoop Technologies is building out a modular, cloud-native e-commerce platform for mid-sized retail clients. Our backend is based on a microservice architecture running in a Kubernetes cluster, written primarily in Go and Node.js, with RabbitMQ for messaging, PostgreSQL for persistent storage, and Redis for caching. Services communicate over gRPC and REST, depending on use case.
