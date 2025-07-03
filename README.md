@@ -84,10 +84,10 @@ You will apply the following business rules:
 ---
 
 ### 📦 Deliverables
-   [x] inventory-events-service source code in Go
-   [x] Dockerfile + docker-compose.yml
-   [x] README.md with setup instructions (view USAGE.md)
-   [x] Example curl or grpcurl commands for testing (view USAGE.md)
+   [x] inventory-events-service source code in Go  
+   [x] Dockerfile + docker-compose.yml  
+   [x] README.md with setup instructions (view USAGE.md)  
+   [x] Example curl or grpcurl commands for testing (view USAGE.md)  
 
 Let me know if you need additional help around RabbitMQ setup, event idempotency, or if you want to pair program some of the logic. Otherwise, looking forward to your initial prototype!
 
