@@ -1,0 +1,43 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - backend
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    environment:
+      POSTGRES_USER: "invent"
+      POSTGRES_PASSWORD: "PurpleOctopi*22"
+      POSTGRES_DB: inventory_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend
+
+  inventory-events-service:
+    build: .
+    container_name: inventory-events-service
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - POSTGRES_URL=postgresql://invent:PurpleOctopi*22@postgres:5432/inventory_service?sslmode=disable
+    depends_on:
+      - rabbitmq
+      - postgres
+    ports:
+      - "5665:5665"
+    networks:
+      - backend
+volumes:
+  postgres_data:
+
+networks:
+  backend:

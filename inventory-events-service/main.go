@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -33,8 +35,10 @@ func failOnError(err error, msg string) {
 }
 
 func main() {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672")
-	failOnError(err, "Failed to connect to RabbitMQ")
+	conn := ConnectToRabbitMQ()
+	if conn == nil {
+		log.Panic("Failed to connect to RabbitMQ")
+	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
@@ -113,6 +117,25 @@ func main() {
 	}
 }
 
+func ConnectToRabbitMQ() *amqp.Connection {
+	var conn *amqp.Connection
+	var err error
+
+	for i := range 10 {
+		conn, err = amqp.Dial(os.Getenv("RABBITMQ_URL"))
+		if err == nil {
+			log.Println("Connected to RabbitMQ")
+			return conn
+		}
+
+		log.Printf("RabbitMQ not ready yet (%d/10): %s", i+1, err)
+		time.Sleep(time.Duration(2*i+1) * time.Second) // exponential-ish backoff
+	}
+
+	log.Fatal("Could not connect to RabbitMQ after retries:", err)
+	return nil
+}
+
 func EvaluateThresholds(currentQuantity, previousQuantity int) string {
 	if currentQuantity <= 0 && previousQuantity > 0 {
 		return "OUT_OF_STOCK"
@@ -139,8 +162,7 @@ func GetBody(body []byte) InventoryEvent {
 
 func CreateLog(log EventLog) {
 	ctx := context.Background()
-	//TODO: Change this to take the connection string from os.Getenv()
-	conn, err := pgx.Connect(ctx, "postgresql://invent:PurpleOctopi*22@localhost:5432/inventory_service?sslmode=disable")
+	conn, err := pgx.Connect(ctx, os.Getenv("POSTGRES_URL"))
 	failOnError(err, "Failed to connect to DB")
 	defer conn.Close(ctx)
 
@@ -176,8 +198,7 @@ func SetupAPIRouter() *gin.Engine {
 
 func GetLogs(id, limit string) string {
 	ctx := context.Background()
-	//TODO: Change this to take the connection string from os.Getenv()
-	conn, err := pgx.Connect(ctx, "postgresql://invent:PurpleOctopi*22@localhost:5432/inventory_service?sslmode=disable")
+	conn, err := pgx.Connect(ctx, os.Getenv("POSTGRES_URL"))
 	failOnError(err, "Failed to connect to DB")
 	defer conn.Close(ctx)
 
