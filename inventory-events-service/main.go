@@ -87,8 +87,10 @@ func main() {
 
 	var lastKnownQuantities = make(map[string]int)
 	lastKnownQuantities["f47ac10b-58cc-4372-a567-0e02b2c3d479"] = 11
-	lastKnownQuantities["2"] = 1
-	lastKnownQuantities["3"] = 0
+	lastKnownQuantities["8c138fa0-bfb4-4fd3-a23a-fed6468337d3"] = 1
+	lastKnownQuantities["a4a00466-c889-4bec-9eb2-89fb4950da6c"] = 0
+	lastKnownQuantities["b1c31e32-721b-472f-84bc-35a95d595184"] = 5
+	lastKnownQuantities["119eefcc-0477-47d8-9f4b-6c55c030a78b"] = 20
 
 	// start internal API
 	go func() {
@@ -104,6 +106,8 @@ func main() {
 		previousQuantity := lastKnownQuantities[productID]
 		currentQuantity := inventoryEventBody.Quantity
 		eventType := EvaluateThresholds(currentQuantity, previousQuantity)
+
+		lastKnownQuantities[productID] = currentQuantity
 
 		if eventType != "" {
 			CreateLog(EventLog{
@@ -180,7 +184,11 @@ func CreateLog(log EventLog) {
 func SetupAPIRouter() *gin.Engine {
 	router := gin.Default()
 
-	router.GET("/events", func(ctx *gin.Context) {
+	authorized := router.Group("/", gin.BasicAuth(gin.Accounts{
+		"test": "test",
+	}))
+
+	authorized.GET("/events", func(ctx *gin.Context) {
 		productID := ctx.Query("product_id")
 		limit := ctx.DefaultQuery("limit", "20")
 

@@ -10,62 +10,44 @@
 ## 💼 Boss to Developer Brief
 
 **To:** Jason Garner
-**From:** Dana Hartley, VP of Engineering, *NovaLoop Technologies*
+**From:** Dana Hartley, VP of Engineering, NovaLoop Technologies
 **Subject:** Software Requirements – Inventory Notifications Microservice
 **Date:** June 19, 2025
 
----
-
 ## 📦 Project Background
+NovaLoop Technologies is building out a modular, cloud-native e-commerce platform for mid-sized retail clients. Our backend is based on a microservice architecture running in a Kubernetes cluster, written primarily in Go and Node.js, with RabbitMQ for messaging, PostgreSQL for persistent storage, and Redis for caching. Services communicate over gRPC and REST, depending on use case.
 
-NovaLoop Technologies is building a **modular, cloud-native e-commerce platform** for mid-sized retail clients. Our backend architecture includes:
-
-- Microservices deployed in **Kubernetes**
-- Services in **Go** and **Node.js**
-- **RabbitMQ** for messaging
-- **PostgreSQL** for persistent storage
-- **Redis** for caching
-- Inter-service communication using **gRPC** and **REST**
-
-Currently, the system lacks a centralized way to handle inventory threshold events. We need a new microservice to monitor inventory levels and notify internal and external systems when critical thresholds are crossed.
-
----
+Currently, our system lacks an efficient way to notify external systems and internal services when an inventory level crosses critical thresholds (e.g., low stock, out-of-stock, back in stock). We need a dedicated microservice to manage inventory threshold events and notify downstream systems such as the fulfillment engine, email dispatcher, and admin dashboard.
 
 ## 🧩 Your Assignment: `inventory-events-service`
 
-You are to build a microservice that:
-
-- Subscribes to inventory updates from the `inventory-service`
-- Detects when inventory crosses critical thresholds:
-  - **Low Stock**
-  - **Out of Stock**
-  - **Back In Stock**
-- Publishes events to a RabbitMQ topic
-- Logs these events in PostgreSQL
-- Provides an internal API for event auditing
-
----
+Build a new microservice called `inventory-events-service`. This service is responsible for:
+- Subscribing to inventory updates from the inventory-service.
+- Evaluating threshold conditions.
+- Publishing events to a RabbitMQ topic for other services to consume.
+- Logging events and their outcomes to a PostgreSQL table.
+- Providing an internal API (REST or gRPC) to query recent inventory events for auditing purposes.
 
 ## 🛠️ Technical Requirements
 
-### 🔤 Language & Frameworks
+### Language & Framework
+**Primary language:** Go (Golang)
+**Frameworks:** Use `Gin` or `chi` for REST (if applicable), or `grpc-go` for gRPC
+**Database ORM:** `gorm` or raw SQL with `pgx`
 
-- **Language:** Go (Golang)
-- **REST (if applicable):** [Gin](https://github.com/gin-gonic/gin) or [chi](https://github.com/go-chi/chi)
-- **gRPC (if applicable):** [grpc-go](https://github.com/grpc/grpc-go)
-- **ORM:** [gorm](https://gorm.io/) or `pgx` with raw SQL
+### Messaging
 
-### 📨 Messaging (RabbitMQ)
+**Broker:** RabbitMQ (via AMQP 0.9.1)
+**Input queue:** `inventory.updates`
+**Output topic:** `inventory.events`
 
-- **Broker:** RabbitMQ (AMQP 0.9.1)
-- **Input Queue:** `inventory.updates`
-- **Output Topic:** `inventory.events`
+### Database
 
-### 🗃️ Database (PostgreSQL)
+**Type:** PostgreSQL (via internal `postgres-service`)
 
-Use the internal `postgres-service`. Suggested schema:
+### Schema:
 
-```sql
+```
 CREATE TABLE inventory_events (
     id UUID PRIMARY KEY,
     product_id UUID NOT NULL,
@@ -76,55 +58,44 @@ CREATE TABLE inventory_events (
 );
 ```
 
----
+### Threshold Logic
 
-### ⚙️ Threshold Logic
+You will apply the following business rules:
+- `LOW_STOCK`: when quantity drops below 10 but is above 0
+- `OUT_OF_STOCK`: when quantity reaches 0
+- `BACK_IN_STOCK`: when quantity goes from 0 to any positive number
 
-Apply the following rules:
+> This logic must only trigger **once** per transition. Don't repeatedly fire `LOW_STOCK` on every message unless it’s a fresh state change.
 
-**LOW_STOCK**: Quantity drops below 10 but above 0
-**OUT_OF_STOCK**: Quantity reaches 0
-**BACK_IN_STOCK**: Quantity increases from 0 to any positive number
-> 🔁 Only trigger each event once per state transition — do not emit LOW_STOCK repeatedly if quantity stays below 10.
+### Internal API
 
----
+Endpoint: `GET /events?product_id=<uuid>&limit=20`
+Returns: Most recent `inventory_events` for a given product ID in JSON format
+Auth: Internal token-based authentication (we'll simulate this with a simple header check: `Authorization: Bearer internal-token`)
 
-### 📡 Internal API
+## 🧪 Testing & Local Setup
+Use Docker for local RabbitMQ and PostgreSQL instances
+Provide a docker-compose.yml with all dependencies
+Write a few integration tests to simulate inventory changes and assert the correct events fire
 
-**Endpoint:**
-`GET /events?product_id=<uuid>&limit=20`
-**Returns:**
-JSON list of recent inventory_events for a given product ID
-Authentication:
-Simulated internal token-based auth via header:
-Authorization: Bearer internal-token
+## 📦 Deliverables
+[x] inventory-events-service source code in Go
+[x] Dockerfile + docker-compose.yml
+[x] README.md with setup instructions (view USAGE.md)
+[x] Example curl or grpcurl commands for testing (view USAGE.md)
 
----
+Let me know if you need additional help around RabbitMQ setup, event idempotency, or if you want to pair program some of the logic. Otherwise, looking forward to your initial prototype!
 
-### 🧪 Testing & Local Setup
-
-Use **Docker** to run local instances of RabbitMQ and PostgreSQL
-Provide a `docker-compose.yml` to spin up dependencies
-Write integration tests that:
-Simulate inventory updates
-Validate correct events are published and stored
+– Dana
 
 ---
 
-### 📦 Deliverables
+## Finished product
 
-✅ `inventory-events-service` source code (written in Go)
-✅ `Dockerfile` + `docker-compose.yml`
-✅ `README.md` with setup instructions
-✅ Example `curl` or `grpcurl` commands
-✅ Integration tests
+### VIEW USAGE.md FOR SETUP INSTRUCTIONS AND TESTS
 
----
+## Review
 
-## 🤝 Notes
+I decided to go with Gin and REST for the internal API, as I felt there would be too much learning overhead for `gpc-go` (though I did read up on this and would love to implement this in a larger project that's designed more for scale).
 
-Let me know if you need assistance with:
-
-Setting up RabbitMQ queues and topics
-Ensuring event idempotency
-Pair programming any part of the business logic
+Beyond that, the setup was fairly straightforward and required little code organization in terms of project structure. Overall the code is hosted in a main.go file in the project file. I would split this out for organization purposes, but the small project size I feel didn't call for it. It's fairly easy to navigate despite all being in one file.
