@@ -1,10 +1,10 @@
 ## Service Design
 
-`mock-inventory-events -> sends events with product_id and quantity -> inventory-events-service -> logs events to PostgreSQL database -> internal API to retrieve events in JSON format`
+The internal API runs on port :5665
 
-port :5665 is an internal API to retrieve events:
 `GET /events?product_id=...&limit=...`
-this does need a basic auth header with the token 'dGVzdDp0ZXN0' (see below in retrieve events section)
+
+This does need a basic auth header with the token 'dGVzdDp0ZXN0' (see below in retrieve events section)
 
 Mock product ID's and their current quantities are as follows:
 ```
