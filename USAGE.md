@@ -26,7 +26,7 @@ sudo docker compose up --build
 // this will start the RabbitMQ, PostgreSQL, and inventory-events-service instances
 ```
 
-**Run the following to mock events to this service**
+**Run the following to mock events to this service (use this to populate the DB to get responses on the API)**
 
 ```
 cd inventory-events-service/mock-inventory-events
