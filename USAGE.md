@@ -19,7 +19,7 @@ b1c31e32-721b-472f-84bc-35a95d595184    5
 
 **Install and set up services**
 
-```
+```bash
 git clone https://github.com/jgarner9/inventory-events-service.git
 cd inventory-events-service/inventory-events-service
 sudo docker compose up --build
@@ -28,7 +28,7 @@ sudo docker compose up --build
 
 **Run the following to mock events to this service (use this to populate the DB to get responses on the API)**
 
-```
+```bash
 cd inventory-events-service/mock-inventory-events
 go run main.go <product_id> <mock_new_quantity>
 # this will send a mock event to the inventory-events-service and update the quantities in-memory
@@ -36,7 +36,7 @@ go run main.go <product_id> <mock_new_quantity>
 
 **Run the following to retrieve events from the service**
 
-```
+```bash
 curl -H "Authorization: Bearer dGVzdDp0ZXN0" http://localhost:5665?product_id=...&limit=...
 # the bearer token is test:test base64 encoded to simulate internal authorization, as per requirements
 ```
