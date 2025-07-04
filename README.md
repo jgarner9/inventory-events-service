@@ -49,7 +49,7 @@ Build a new microservice called `inventory-events-service`. This service is resp
    **Type:** PostgreSQL (via internal `postgres-service`)
 
 #### Schema:
-```
+```sql
 CREATE TABLE inventory_events (
     id UUID PRIMARY KEY,
     product_id UUID NOT NULL,
